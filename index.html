@@ -37,7 +37,7 @@
       "esri/widgets/Expand",
       "esri/widgets/Weather",
       "esri/widgets/Daylight"
-    ], (WebScene, SceneView, Expand, Weather, Daylight) => {
+    ], (WebScene, SceneView, Expand, Weather, Daylight, reactiveUtils) => {
       /***********************************
        * Create the SceneView
        ***********************************/
@@ -63,6 +63,8 @@
         }
 
       });
+
+
 
       /***********************************
        * Add the widgets' UI elements to the view
@@ -96,7 +98,8 @@
         });
 
         const selection = document.getElementById("selection");
-        console.log(selection);
+
+
         selection.addEventListener("calciteSegmentedControlChange", () => {
           switch (selection.selectedItem.value) {
             case "flooding":
@@ -106,8 +109,24 @@
                 cloudCover: 0.7,
                 precipitation: 0.3
               };
+              city.stop();
               sound.play();
+              snow.stop();
+              bell.stop();
 
+              view.watch("scale", function(newScale){
+                if (newScale <300) {
+                  street.play();
+                  sound.volume = 0.1;
+                  bell.stop();
+
+
+                } else {
+                  street.stop();
+                  bell.stop();
+
+                }
+              });
               // Turn on the water layer showing the flooding
               floodLevel.visible = true;
               break;
@@ -119,10 +138,58 @@
                 cloudCover: 0.3
               };
               sound.stop();
+              city.play();
+              snow.stop();
+              bell.stop();
+              street.stop();
 
+              // view.watch("scale", function(newScale){
+              //   if (newScale <300) {
+              //     people.play();
+              //     bell.stop();
+              //     street.stop();
+
+              //   } else {
+              //     street.stop();
+              //     bell.stop();
+
+              //   }
+              // });
               // Turn off the water layer showing the flooding
               floodLevel.visible = false;
               break;
+
+              case "snowy":
+              // Change the weather back to cloudy
+              view.environment.weather = {
+                type: "snowy",
+                cloudCover: 0.8,
+                precipitation: 0.3,
+                snowCover: "enabled"
+              };
+              sound.stop();
+              city.stop();
+              snow.play();
+              street.stop();
+
+              view.watch("scale", function(newScale){
+                if (newScale <300) {
+                  bell.play();
+                  snow.volume = 0.1;
+                  street.stop();
+
+
+                } else {
+                  bell.stop();
+                  street.stop();
+
+
+                }
+              });
+              // Turn off the water layer showing the flooding
+              floodLevel.visible = false;
+              break;
+
           }
         })
       })
@@ -133,15 +200,39 @@
         src: ['sounds/1.wav'],
         loop: true
         });
+        var city = new Howl({
+        src: ['sounds/5.wav'],
+        loop: true,
+        autoplay: true
+        });
+        var snow = new Howl({
+        src: ['sounds/6.mp3'],
+        loop: true,
+        });
+        var street = new Howl({
+        src: ['sounds/calm.mp3'],
+        loop: true,
+        });
+        var bell = new Howl({
+        src: ['sounds/bell.mp3'],
+        loop: true,
+        });
+        var people = new Howl({
+        src: ['sounds/people.mp3'],
+        loop: true,
+        });
   </script>
 </head>
 
 <body>
   <div id="viewDiv"></div>
   <calcite-segmented-control id="selection" width="full">
-    <calcite-segmented-control-item value="noFlooding" checked>No flooding</calcite-segmented-control-item>
+    <calcite-segmented-control-item value="noFlooding" checked>Sunny</calcite-segmented-control-item>
     <calcite-segmented-control-item value="flooding">Flooding</calcite-segmented-control-item>
+    <calcite-segmented-control-item value="snowy">Snowy</calcite-segmented-control-item>
   </calcite-segmented-control>
+  <div id="location"></div>
+
 </body>
 
 </html>
